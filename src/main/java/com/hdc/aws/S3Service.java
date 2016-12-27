@@ -18,7 +18,6 @@ public class S3Service {
 
     public void putWatermarkOnPDF(String bucketName, String key) throws IOException {
         AmazonS3 s3Client = getAmazonS3Client();
-
         S3Object obj = s3Client.getObject(new GetObjectRequest(bucketName, key));
         boolean doNotHaveWatermarkMetadata = "true".equals(obj.getObjectMetadata().getUserMetaDataOf(WATERMARK_METADATA)) == false;
         if(doNotHaveWatermarkMetadata) {

@@ -7,14 +7,11 @@ import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.PDResources;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 import org.apache.pdfbox.pdmodel.graphics.state.PDExtendedGraphicsState;
 
 import java.io.*;
-import java.lang.reflect.Type;
 import java.util.Iterator;
-import java.util.Map;
 
 public class PDFProcessor{
 
@@ -41,8 +38,8 @@ public class PDFProcessor{
             PDPage page = pages.next();
             PDPageContentStream cs = new PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, true);
 
-//            addText(page, cs, DISCLAIMER);
-            placeWatermark(doc, page, cs);
+            placeWatermark(doc, page, cs,new File(Main.class.getClassLoader().getResource("watermark.png").getFile()), 0.2f, 0.35f, Placement.MIDDLE);
+            placeWatermark(doc, page, cs, new File(Main.class.getClassLoader().getResource("text-black.png").getFile()), 0.8f, 1f, Placement.BOTTOM_LEFT);
 
             cs.close();
             doc.save(outputStream);
@@ -50,40 +47,39 @@ public class PDFProcessor{
         return doc;
     }
 
-    private void addText(PDPage page, PDPageContentStream cs, String text) throws IOException {
-        cs.setGraphicsStateParameters(initiateGraphicsState(page, 0.8f));
-        cs.beginText();
-        cs.setFont(PDType1Font.HELVETICA, 14);
-        cs.newLineAtOffset(0, 14);
-        cs.showText(text);
-        cs.endText();
-    }
-
-    private void placeWatermark(PDDocument doc, PDPage page, PDPageContentStream cs) throws IOException {
-        cs.setGraphicsStateParameters(initiateGraphicsState(page, 0.2f));
-        PDImageXObject ximage = PDImageXObject.createFromFileByContent(new File(Main.class.getClassLoader().getResource("watermark.png").getFile()), doc);
+    private void placeWatermark(PDDocument doc, PDPage page, PDPageContentStream cs, File image, float alphaLevel, float imageScaleToPage, Placement placement) throws IOException {
+        cs.setGraphicsStateParameters(initiateGraphicsState(page, alphaLevel));
+        PDImageXObject ximage = PDImageXObject.createFromFileByContent(image, doc);
         PDRectangle rec = page.getMediaBox();
-        placeWatermarkAtTheMiddle(cs, ximage, rec);
+        switch(placement) {
+            case MIDDLE:
+                placeImageAtTheMiddle(cs, ximage, rec, imageScaleToPage);
+                break;
+            case BOTTOM_LEFT:
+                placeImageAtTheBottomLeft(cs, ximage, rec, imageScaleToPage);
+                break;
+        }
     }
 
-    private void placeWatermarkAtTheMiddle(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
-        float scale = rec.getWidth() * 0.25f / ximage.getWidth();
+    private void placeImageAtTheMiddle(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec, float imageScaleToPage) throws IOException {
+        float scale = rec.getWidth() / ximage.getWidth() * imageScaleToPage;
         cs.drawImage(ximage, rec.getUpperRightX() - (rec.getUpperRightX() / 2) - (ximage.getWidth() * scale / 2), rec.getUpperRightY() - (rec.getUpperRightY() / 2) - (ximage.getHeight() * scale / 2), ximage.getWidth() * scale, ximage.getHeight() * scale);
     }
 
-    private void placeWatermarkAtTheBottomLeft(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
-        cs.drawImage(ximage, 0, 0, ximage.getWidth() / 2, ximage.getHeight() / 2);
+    private void placeImageAtTheBottomLeft(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec, float imageScaleToPage) throws IOException {
+        float scale = rec.getWidth() / ximage.getWidth() * imageScaleToPage;
+        cs.drawImage(ximage, 0, 0, ximage.getWidth() * scale, ximage.getHeight() * scale);
     }
 
-    private void placeWatermarkAtTheBottomRight(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
+    private void placeImageAtTheBottomRight(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
         cs.drawImage(ximage, rec.getWidth() - (ximage.getWidth() / 2), 0, ximage.getWidth() / 2, ximage.getHeight() / 2);
     }
 
-    private void placeWatermarkAtTheTopLeft(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
+    private void placeImageAtTheTopLeft(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
         cs.drawImage(ximage, 0, rec.getHeight() - (ximage.getHeight() / 2), ximage.getWidth() / 2, ximage.getHeight() / 2);
     }
 
-    private void placeWatermarkAtTheTopRight(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
+    private void placeImageAtTheTopRight(PDPageContentStream cs, PDImageXObject ximage, PDRectangle rec) throws IOException {
         cs.drawImage(ximage, rec.getWidth() - (ximage.getWidth() / 2), rec.getHeight() - (ximage.getHeight() / 2), ximage.getWidth() / 2, ximage.getHeight() / 2);
     }
 

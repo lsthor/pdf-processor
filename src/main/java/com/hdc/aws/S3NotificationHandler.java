@@ -28,7 +28,8 @@ public class S3NotificationHandler implements RequestStreamHandler, RequestHandl
         Map<String, Object> myMap = gson.fromJson(IOUtils.toString(input, "UTF-8"), type);
         JXPathContext testContext = JXPathContext.newContext(myMap);
         String key = String.valueOf(testContext.getValue("//Records[1]/s3/object/key"));
-        new S3Service().putWatermarkOnPDF(BUCKET_NAME, key);
+        String bucketName = String.valueOf(testContext.getValue("//Records[1]/s3/bucket/name"));
+        new S3Service().putWatermarkOnPDF(bucketName, key);
         output.write("OK".getBytes());
     }
 
